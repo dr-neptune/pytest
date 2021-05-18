@@ -1,5 +1,7 @@
 #+TITLE: Getting Started with pytest
 
+* Run Tests
+
 #+BEGIN_SRC python :tangle test_one.py
 def test_passing():
     assert (1, 2, 3) == (1, 2, 3)
@@ -128,4 +130,10 @@ pytest tasks
 
 # given a set of filenames
 pytest test_three.py test_four.py
+#+END_SRC
+
+* Run a Single Test
+
+#+BEGIN_SRC bash
+pytest -v tasks/test_four.py::test_dict.py
 #+END_SRC
