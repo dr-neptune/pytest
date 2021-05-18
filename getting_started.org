@@ -1,0 +1,131 @@
+#+TITLE: Getting Started with pytest
+
+#+BEGIN_SRC python :tangle test_one.py
+def test_passing():
+    assert (1, 2, 3) == (1, 2, 3)
+#+END_SRC
+
+#+BEGIN_SRC bash :results verbatim
+pytest -v test_one.py
+#+END_SRC
+
+#+begin_example
+============================= test session starts ==============================
+platform linux -- Python 3.8.6, pytest-6.2.3, py-1.10.0, pluggy-0.13.1 -- /home/michael/mainvenv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/michael/Documents/org_files/pytest
+plugins: Faker-8.1.0, typeguard-2.11.1
+collecting ... collected 1 item
+
+test_one.py::test_passing PASSED                                         [100%]
+
+============================== 1 passed in 0.03s ===============================
+#+end_example
+
+#+BEGIN_SRC python :tangle test_two.py
+def test_failing():
+    assert (1, 2, 3) == (3, 2, 1)
+#+END_SRC
+
+#+BEGIN_SRC bash :results raw
+pytest -v test_two.py
+#+END_SRC
+
+#+begin_example
+======================== test session starts ========================
+platform linux -- Python 3.8.6, pytest-6.2.3, py-1.10.0, pluggy-0.13.1 -- /home/michael/mainvenv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/michael/Documents/org_files/pytest
+plugins: Faker-8.1.0, typeguard-2.11.1
+collected 1 item
+
+test_two.py::test_failing FAILED                              [100%]
+
+============================= FAILURES ==============================
+___________________________ test_failing ____________________________
+
+    def test_failing():
+>       assert (1, 2, 3) == (3, 2, 1)
+E       assert (1, 2, 3) == (3, 2, 1)
+E         At index 0 diff: 1 != 3
+E         Full diff:
+E         - (3, 2, 1)
+E         ?  ^     ^
+E         + (1, 2, 3)
+E         ?  ^     ^
+
+test_two.py:2: AssertionError
+====================== short test summary info ======================
+FAILED test_two.py::test_failing - assert (1, 2, 3) == (3, 2, 1)
+========================= 1 failed in 0.04s =========================
+#+end_example
+
+#+BEGIN_SRC python
+from collections import namedtuple
+
+Task = namedtuple("Task", ["summary", "owner", "done", "id"])
+
+print(Task("yes", "owned", "nope", "10").owner)
+#+END_SRC
+
+#+BEGIN_SRC python :tangle tasks/test_three.py
+# test the Task datatype
+from collections import namedtuple
+
+Task = namedtuple("Task", ["summary", "owner", "done", "id"])
+Task.__new__.__defaults__ = (None, None, False, None)
+
+def test_defaults():
+    t1 = Task()
+    t2 = Task(None, None, False, None)
+    assert t1 == t2
+
+def test_member_access():
+    """
+    Check field functionality of namedtuple
+    """
+    t = Task("buy oat milk", "brian")
+    assert t.summary == "buy oat milk"
+    assert t.owner == "brian"
+    assert (t.done, t.id) == (False, None)
+#+END_SRC
+
+#+BEGIN_SRC python :tangle tasks/test_four.py
+# test the Task datatype
+from collections import namedtuple
+Task = namedtuple("Task", ["summary", "owner", "done", "id"])
+Task.__new__.__defaults__ = (None, None, False, None)
+
+def test_asdict():
+    """
+    _asdict() should return a dictionary
+    """
+    t_task = Task("do something", "okken", True, 21)
+    t_dict = t_task._asdict()
+    expected = {"summary": "do something",
+                "owner": "okken",
+                "done": True,
+                "id": 21}
+    assert t_dict == expected
+
+def test_replace():
+    """
+    replace() should change passed in fields
+    """
+    t_before = Task("finish book", "brian", False)
+    t_after = t_before._replace(id=10, done=True)
+    t_expected = Task("finish book", "brian", True, 10)
+    assert t_after == t_expected
+#+END_SRC
+
+#+BEGIN_SRC bash
+# given a whole directory
+cd tasks
+pytest
+
+# specifying a directory
+pytest tasks
+
+# given a set of filenames
+pytest test_three.py test_four.py
+#+END_SRC
