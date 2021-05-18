@@ -134,6 +134,128 @@ pytest test_three.py test_four.py
 
 * Run a Single Test
 
-#+BEGIN_SRC bash
-pytest -v tasks/test_four.py::test_dict.py
+#+BEGIN_SRC bash :dir ~/Documents/pytest :results verbatim
+pytest -v tasks/test_four.py::test_asdict
 #+END_SRC
+
+#+begin_example
+============================= test session starts ==============================
+platform linux -- Python 3.8.6, pytest-6.2.3, py-1.10.0, pluggy-0.13.1 -- /home/michael/mainvenv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/michael/Documents/pytest
+plugins: Faker-8.1.0, typeguard-2.11.1
+collecting ... collected 1 item
+
+tasks/test_four.py::test_asdict PASSED                                   [100%]
+
+============================== 1 passed in 0.03s ===============================
+#+end_example
+
+* Using Options
+
+#+BEGIN_SRC bash
+pytest --help
+#+END_SRC
+
+** -collect-only
+
+This shows which tests will be run with the given options and configurations
+
+#+BEGIN_SRC bash
+pytest --collect-only
+#+END_SRC
+
+** -k Expression
+
+The -k option lets you use an expression to find what test functions to run.
+It can be used as a shortcut to running an individual test if its name is unique,
+or running a set of tests that have a common prefix or suffix in their names.
+
+#+BEGIN_SRC bash
+pytest -k "asdict or defaults" --collect-only
+#+END_SRC
+
+** -m MARKEXPR
+
+Markers allow you to mark a subset of your test functions so that they can be run together.
+
+Also accepts group of marks, like "mark1 and mark2", "mark1 and not mark2"
+
+#+BEGIN_SRC python
+import pytest
+
+# ...
+
+@pytest.mark.run_these_please
+def test_member_access():
+    pass
+#+END_SRC
+
+#+BEGIN_SRC bash
+pytest -v -m run_these_please
+#+END_SRC
+
+** -x, -exitfirst
+
+If a test fn encounters a failing assert or an exception, the execution for that test stops there and the test fails, then pytest runs the next test.
+Sometimes stopping the entire test session immediately when a test fails is what we want though, and that's what the -x option does.
+
+#+BEGIN_SRC bash
+pytest -x
+#+END_SRC
+
+We can also turn off the stacktrace
+
+#+BEGIN_SRC bash
+pytest --tb=no
+#+END_SRC
+
+** -maxfail=num
+
+This lets us specify how many failures are ok
+
+#+BEGIN_SRC bash
+pytest --maxfail=2 --tb=no
+#+END_SRC
+
+** -s and -capture=method
+
+The -s flag allows print statements (or any stdout statement) to actually be printed to stdout when the tests are running.
+It is a shortcut for -capture=no. This can help us do things like using a series of print() statements in our tests and
+outputting the results to watch the flow of the test.
+
+** -lf, -last-failed
+
+This runs the last test that fails.
+
+#+BEGIN_SRC bash
+pytest --lf
+#+END_SRC
+
+** -ff, -failed-first
+
+Does the same as --lf, and then runs the rest of the tests that passed as well.
+
+#+BEGIN_SRC bash
+pytest --ff --tb=no
+#+END_SRC
+
+** -v, -verbose
+
+#+BEGIN_SRC bash
+pytest -v -ff --tb=no
+#+END_SRC
+
+alternatively, we can quiet the output with -q, -quiet
+
+** -l, -showlocals
+
+This makes local variables and their values display with tracebacks for failing tests.
+
+#+BEGIN_SRC bash
+pytest -l tasks
+#+END_SRC
+
+** -tb=style
+
+This modifies the way tracebacks for failures are output.
