@@ -120,3 +120,303 @@ def test_list_raises():
 def test_get_raises(TypeError):
     tasks.get(task_id="123")
 #+END_SRC
+
+* Filling Out the Smoke Test
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_add.py
+import pytest
+import tasks
+from tasks import Task
+
+
+def test_add_returns_valid_id():
+    """
+    tasks.add(<valid task>) should return an integer
+    """
+    new_task = Task("do something")
+    task_id = tasks.add(new_task)
+    assert isinstance(task_id, int)
+
+@pytest.mark.smoke
+def test_added_task_has_id_set():
+    """
+    Make sure the task_id field is set by tasks.add()
+    """
+    # given an initialized tasks db and a new task is added
+    new_task = Task("sit in char", owner = "me", done = True)
+    task_id = tasks.add(new_task)
+
+    # when task is retrieved
+    tasks_from_db = tasks.get(task_id)
+
+    # then task_id matches id field
+    assert tasks_from_db.id == task_id
+
+
+
+def test_add_returns_valid_id():
+    """
+    tasks.add(<valid task>) should return an integer
+    """
+    new_task = Task("do something")
+    task_id = tasks.add(new_task)
+    assert isinstance(task_id, int)
+
+
+@pytest.mark.smoke
+def test_added_task_has_id_set():
+    """
+    Make sure the task_id field is set by tasks.add()
+    """
+    # given an initialized tasks db and a new task is added
+    new_task = Task("sit in char", owner = "me", done = True)
+    task_id = tasks.add(new_task)
+
+    # when task is retrieved
+    tasks_from_db = tasks.get(task_id)
+
+    # then task_id matches id field
+    assert tasks_from_db.id == task_id
+#+END_SRC
+
+* Skipping Tests
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_unique_id_1.py
+import pytest
+import tasks
+
+
+def test_unique_id():
+    """
+    Calling unique_id() twice should return different numbers.
+    """
+    id_1 = tasks.unique_id()
+    id_2 = tasks.unique_id()
+    assert id_1 != id_2
+#+END_SRC
+
+We can mark the test in a way that pytest skips it
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_unique_id_2.py
+import pytest
+import tasks
+
+@pytest.mark.skip(reason="misunderstood the API")
+def test_unique_id():
+    """
+    Calling unique_id() twice should return different numbers.
+    """
+    id_1 = tasks.unique_id()
+    id_2 = tasks.unique_id()
+    assert id_1 != id_2
+
+def test_unique_id_2():
+    """
+    unique_id() should return an unused id.
+    """
+    ids = []
+    ids.append(tasks.add(Task("one")))
+    ids.append(tasks.add(Task("two")))
+    ids.append(tasks.add(Task("three")))
+
+    # grab a unique id
+    uid = tasks.unique_id()
+
+    # make sure it isn't in the list of existing ids
+    assert uid not in ids
+
+#+END_SRC
+
+We could also provide a conditional for the marked skip
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_unique_id_3.py
+import pytest
+import tasks
+
+@pytest.mark.skipif(tasks.__version__ < "0.2.0",
+                    reason="not supported until version 0.2.0")
+def test_unique_id():
+    """
+    Calling unique_id() twice should return different numbers.
+    """
+    id_1 = tasks.unique_id()
+    id_2 = tasks.unique_id()
+    assert id_1 != id_2
+#+END_SRC
+
+* Marking Tests as Expecting to Fail
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_unique_id_4.py
+@pytest.mark.xfail(tasks.__version__ < "0.2.0",
+                   reason="not supported until version 0.2.0")
+def test_unique_id():
+    """
+    Calling unique_id() twice should return different numbers.
+    """
+    id_1 = tasks.unique_id()
+    id_2 = tasks.unique_id()
+    assert id_1 != id_2
+
+@pytest.mark.xfail()
+def test_unique_id_is_a_duck():
+    """
+    Demonstrate xfail
+    """
+    uid = tasks.unique_id()
+    assert uid == "a duck"
+
+@pytest.mark.xpass()
+def test_unique_id_not_a_duck():
+    """
+    Demonstrate xpass
+    """
+    uid = tasks.unique_id()
+    assert uid != "a duck"
+#+END_SRC
+
+* Running a Subset of Tests
+
+** A Single Directory
+
+#+BEGIN_SRC bash
+pytest tests/func --tb=no
+#+END_SRC
+
+** A Single Test File/Module
+
+#+BEGIN_SRC bash
+pytest tests/func/test_add.py
+#+END_SRC
+
+** A Single Test Function
+
+#+BEGIN_SRC bash
+pytest -v tests/func/test_add.py::test_add_returns_valid_id
+#+END_SRC
+
+** A Single Test Class
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_api_exceptions.py
+class TestUpdate:
+    """
+    Test expected exceptions with tasks.update()
+    """
+    def test_bad_id(self):
+        """
+        A non-int id should raise an exception
+        """
+        with pytest.raises(TypeError):
+            tasks.update(task_id={"dict instead": 1},
+                         tasks=tasks.Task())
+
+    def test_bad_task(self):
+        """
+        A non-Task task should raise an exception
+        """
+        with pytest.raises(TypeError):
+            tasks.update(task_id=1, task="not a task")
+#+END_SRC
+
+#+BEGIN_SRC bash
+pytest -v tests/func/test_api_exceptions.py::TestUpdate
+#+END_SRC
+
+** A Single Test Method of a Test Class
+#+BEGIN_SRC bash
+pytest -v tests/func/test_api_exceptions.py::TestUpdate::test_bad_id
+#+END_SRC
+
+** A Set of Tests Based on Test Name
+
+The -k option enables you to pass in an expression to run tests that have certain names specified by the expression
+as a substring of the test name.
+
+#+BEGIN_SRC bash
+pytest -v -k _raises
+#+END_SRC
+
+* Parametrized Testing
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_add_variety.py
+import pytest
+import tasks
+from tasks import Task
+
+def test_add_1():
+    """
+    tasks.get() using id returned from add() works
+    """
+    task = Task("breathe", "BRIAN", True)
+    task_id = tasks.add(task)
+    t_from_db = tasks.get(task_id)
+    # everything but the id should be the same
+    assert equivalent(t_from_db, task)
+
+def equivalent(t1, t2):
+    """
+    Check two tasks for equivalence
+    """
+    # compare everything but the id field
+    return ((t1.summary == t2.summary) and
+            (t1.owner == t2.owner) and
+            (t1.done == t2.done))
+
+# add lots of parameters to our task
+@pytest.mark.parametrize("task",
+                         [Task("sleep", done=True),
+                          Task("wake", "brian"),
+                          Task("breathe", "BRIAN", True),
+                          Task("exercise", "BrIaN", False)])
+def test_add_2(task):
+    """
+    Demonstrate parametrize with one parameter
+    """
+    task_id = tasks.add(task)
+    t_from_db = tasks.get(task_id)
+    assert equivalent(t_from_db, task)
+
+# see how it works if we use a tuple of tasks
+@pytest.mark.parametrize("summary, owner, done",
+ [("sleep", None, False),
+  ("wake", "brian", False),
+  ("breathe", "BRIAN", True),
+  ("eat eggs", "BrIaN", False),
+ ])
+def test_add_3(summary, owner, done):
+    """
+    Demonstrate parametrize with multiple parameters
+    """
+    task = Task(summary, owner, done)
+    task_id = tasks.add(task)
+    t_from_db = tasks.get(task_id)
+    assert equivalent(t_from_db, task)
+
+
+tasks_to_try = (Task("sleep", done=True),
+                Task("wake", "brian"),
+                Task("breathe", "BRIAN", True),
+                Task("exercise", "BrIaN", False))
+@pytest.mark.parametrize("task", tasks_to_try)
+def test_add_4(task):
+    """
+    Slightly different take
+    """
+    task_id = tasks.add(task)
+    t_from_db = tasks.get(task_id)
+    assert equivalent(t_from_db, task)
+
+
+task_ids = ["Task {}, {}, {}".format(t.summary, t.owner, t.done)
+            for t in tasks_to_try]
+
+
+
+@pytest.fixture(autouse=True)
+def initialized_tasks_db(tmpdir):
+    """
+    Connect to db before testing, disconnect after
+    """
+    tasks.start_tasks_db(str(tmpdir), "tiny")
+    yield
+    tasks.stop_tasks_db()
+#+END_SRC
