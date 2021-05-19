@@ -1,0 +1,122 @@
+#+TITLE: Writing Test Functions
+
+* Testing a Package
+
+
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tests/unit/test_task.py
+"""Test the Task data type."""
+from tasks import Task
+
+
+def test_asdict():
+    """_asdict() should return a dictionary."""
+    t_task = Task('do something', 'okken', True, 21)
+    t_dict = t_task._asdict()
+    expected = {'summary': 'do something',
+                'owner': 'okken',
+                'done': True,
+                'id': 21}
+    assert t_dict == expected
+
+
+def test_replace():
+    """replace() should change passed in fields."""
+    t_before = Task('finish book', 'brian', False)
+    t_after = t_before._replace(id=10, done=True)
+    t_expected = Task('finish book', 'brian', True, 10)
+    assert t_after == t_expected
+
+
+def test_defaults():
+    """Using no parameters should invoke defaults."""
+    t1 = Task()
+    t2 = Task(None, None, False, None)
+    assert t1 == t2
+
+
+def test_member_access():
+    """Check .field functionality of namedtuple."""
+    t = Task('buy milk', 'brian')
+    assert t.summary == 'buy milk'
+    assert t.owner == 'brian'
+    assert (t.done, t.id) == (False, None)
+#+END_SRC
+
+* Using assert Statements
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tests/unit/test_task_fail.py
+from tasks import Task
+
+def test_task_equality():
+    """
+    Different tasks should not be equal
+    """
+    t1 = Task("sit there", "brian")
+    t2 = Task("do something", "okken")
+    assert t1 == t2
+
+def test_dict_equality():
+    """
+    Different tasks compared as dicts should not be equal
+    """
+    t1_dict = Task("make sandwich", "okken")._asdict()
+    t2_dict = Task("make sandwich", "okkem")._asdict()
+    assert t1_dict == t2_dict
+#+END_SRC
+
+* Expecting Exceptions
+
+Here are the types found in api.py
+
+#+BEGIN_SRC text
+def add(task): # type: (Task) -> int
+def get(task_id): # type: (int) -> Task
+def list_tasks(owner=None): # type: (str|None) -> list of Task
+def count(): # type: (None) -> int
+def update(task_id, task): # type: (int, Task) -> None
+def delete(task_id): # type: (int) -> None
+def delete_all(): # type: () -> None
+def unique_id(): # type: () -> int
+def start_tasks_db(db_path, db_type): # type: (str, str) -> None
+def stop_tasks_db(): # type: () -> None
+#+END_SRC
+
+To make sure these functions raise exceptions if called incorrectly, let's use the wrong type in a test fn to intentionally cause TypeError exceptions and use with pytest.raises(<expected exception>)
+
+#+BEGIN_SRC python :tangle book_code/code/ch2/tasks_proj/tests/func/test_api_exceptions2.py
+import pytest
+import tasks
+
+def test_add_raises():
+    """
+    add() should raise an exception with wrong type param
+    """
+    with pytest.raises(TypeError):
+        tasks.add(task = "not a Task object")
+
+# our DB must be either tiny or mongo
+# we can make sure our exception message is correct by adding as excinfo
+def test_starts_tasks_db_raises():
+    """
+    Make sure unsupported db raises an exception
+    """
+    with pytest.raises(ValueError) as excinfo:
+        tasks.start_tasks_db("some/great/path", "mysql")
+    exception_msg = excinfo.value.args[0]
+    assert exception_msg == "db_type must be a 'tiny' or 'mongo'"
+
+# we can add markers to our tests for performing smoke tests later
+@pytest.mark.smoke
+def test_list_raises():
+    """
+    list() should raise an exception with wrong type param
+    """
+    with pytest.raises(TypeError):
+        tasks.list_tasks(owner=123)
+
+@pytest.mark.get
+@pytest.mark.smoke
+def test_get_raises(TypeError):
+    tasks.get(task_id="123")
+#+END_SRC

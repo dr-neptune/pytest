@@ -259,3 +259,45 @@ pytest -l tasks
 ** -tb=style
 
 This modifies the way tracebacks for failures are output.
+
+tb=no removes the traceback entirely
+
+#+BEGIN_SRC bash :results raw
+pytest --tb=no tasks
+#+END_SRC
+
+#+RESULTS:
+============================= test session starts ==============================
+platform linux -- Python 3.8.6, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
+rootdir: /home/michael/Documents/pytest
+plugins: Faker-8.1.0, typeguard-2.11.1
+collected 4 items
+
+tasks/test_four.py ..                                                    [ 50%]
+tasks/test_three.py ..                                                   [100%]
+
+============================== 4 passed in 0.03s ===============================
+
+** -durations=N
+
+If you pass in durations=0, it will run slowest to fastest and report on the speed
+
+#+BEGIN_SRC bash :results raw
+pytest --durations=0 tasks
+#+END_SRC
+
+#+RESULTS:
+============================= test session starts ==============================
+platform linux -- Python 3.8.6, pytest-6.2.3, py-1.10.0, pluggy-0.13.1
+rootdir: /home/michael/Documents/pytest
+plugins: Faker-8.1.0, typeguard-2.11.1
+collected 4 items
+
+tasks/test_four.py ..                                                    [ 50%]
+tasks/test_three.py ..                                                   [100%]
+
+============================== slowest durations ===============================
+0.02s setup    tasks/test_four.py::test_asdict
+
+(11 durations < 0.005s hidden.  Use -vv to show these durations.)
+============================== 4 passed in 0.03s ===============================
