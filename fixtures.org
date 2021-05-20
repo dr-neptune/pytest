@@ -1,0 +1,81 @@
+#+TITLE: pytest Fixtures
+
+Here is a simple fixture that returns a number:
+
+#+BEGIN_SRC python :tangle ch3/test_fixtures.py
+import pytest
+
+@pytest.fixture()
+def some_data():
+    """Return answer to ultimate question"""
+    return 42
+
+def test_some_data(some_data):
+    """Use fixture return value in a test"""
+    assert some_data == 42
+#+END_SRC
+
+* Sharing Fixtures Through conftest.py
+
+To share fixtures among multiple test files, you need to use a conftest.py file somewhere centrally located for all of the tests.
+
+The conftest.py file gets read by pytest and is considered a local plugin. It is not imported anywhere.
+
+* Using Fixtures for Setup and Teardown
+
+#+BEGIN_SRC python :tangle ch3/conftest.py
+import pytest
+import tasks
+from tasks import Task
+
+@pytest.fixture()
+def tasks_db(tmpdir):
+    """Connect to db before tests, disconnect after."""
+    # setup: start db
+    tasks.start_tasks_db(str(tmpdir), "tiny")
+
+    yield # this is where the testing happens
+
+    # teardown: stop db
+    tasks.stop_tasks_db()
+#+END_SRC
+
+#+BEGIN_SRC python :tangle ch3/tests/func/add_test.py
+import pytest
+import tasks
+from tasks import Task
+
+def test_add_returns_valid_id(tasks_db):
+    """tasks.add(<valid task>) should return an integer"""
+    # GIVEN an initialized tasks db
+    # WHEN a new task is added
+    # THEN returned task_id is of type int
+    new_task = Task("do something")
+    task_id = tasks.add(new_task)
+    assert isinstance(task_id, int)
+#+END_SRC
+
+You can view fixture execution with the --setup-show flag
+
+#+BEGIN_SRC bash
+pytest --setup-show test_add.py -k valid_id
+#+END_SRC
+
+* Using Fixtures for Test Data
+
+Fixtures are a great place to store data to use for testing.
+
+#+BEGIN_SRC python :tangle ch3/test_fixtures.py
+@pytest.fixture()
+def a_tuple():
+    """Return something more interesting"""
+    return (1, "foo", None, {"bar": 23})
+
+def test_a_tuple(a_tuple):
+    """Demo the a_tuple fixture."""
+    assert a_tuple[3]["bar"] == 32
+#+END_SRC
+
+#+BEGIN_SRC python :tangle ch3/tasks_proj/conftest.py
+
+#+END_SRC
