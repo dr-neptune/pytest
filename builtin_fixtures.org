@@ -1,1 +1,69 @@
 #+TITLE: Builtin Fixtures
+
+Reusing common fixtures is a good idea, so the pytest devs included some commonly needed fixtures with pytest.
+
+In addition to handling temp files, some built-in fixtures let you:
+- access command-line options
+- communicate between test sessions
+- validate output streams
+- modify environmental variables
+- interrogate warnings
+
+* Using tmpdir and tmpdir_factory
+
+We can use tmpdir to create files or directories used by a single test, and use tmpdir_factory when we want to set up a directory for many tests
+
+#+BEGIN_SRC python :tangle test_tmpdir.py
+import pytest
+
+def test_tmpdir(tmpdir):
+    # tmpdir already has a path name associated with it
+    a_file = tmpdir.join('something.txt')
+
+    # we can create directories
+    a_sub_dir = tmpdir.mkdir('anything')
+
+    # we can create files in directories (created when written)
+    another_file = a_sub_dir.join('something_else.txt')
+
+    # this write creates 'something.txt'
+    a_file.write('contents may settle during shipping')
+
+    # this write creates 'anything/something_else.txt'
+    another_file.write('something different')
+
+    # we can read files as well
+    assert a_file.read() == 'contents may settle during shipping'
+    assert another_file.read() == 'something different'
+
+def test_tmpdir_factory(tmpdir_factory):
+    # we should start with making a directory
+    # a_dir acts like the object returned from the tmpdir fixture
+    a_dir = tmpdir_factory.mktemp('mydir')
+
+    # base_temp will be the parent dir of 'mydir'
+    # we don't have to use this, this is for illustrative purposes
+    base_temp = tmpdir_factory.getbasetemp()
+    print("base:", base_temp)
+
+    # tmpdir already has a path name associated with it
+    a_file = a_dir.join('something.txt')
+
+    # we can create directories
+    a_sub_dir = a_dir.mkdir('anything')
+
+    # we can create files in directories (created when written)
+    another_file = a_sub_dir.join('something_else.txt')
+
+    # this write creates 'something.txt'
+    a_file.write('contents may settle during shipping')
+
+    # this write creates 'anything/something_else.txt'
+    another_file.write('something different')
+
+    # we can read files as well
+    assert a_file.read() == 'contents may settle during shipping'
+    assert another_file.read() == 'something different'
+#+END_SRC
+
+* Using Temporary Directories for Other Scopes
